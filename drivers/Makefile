@@ -129,3 +129,6 @@ obj-$(CONFIG_IOMMU_SUPPORT)	+= iommu/
 
 # Virtualization drivers
 obj-$(CONFIG_VIRT_DRIVERS)	+= virt/
+
+# ASUS customized RIL drivers
+obj-$(CONFIG_RIL)			+= ril/
