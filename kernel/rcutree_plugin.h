@@ -2163,7 +2163,8 @@ static void rcu_prepare_for_idle(int cpu)
 		per_cpu(rcu_dyntick_drain, cpu) = RCU_IDLE_FLUSHES;
 		per_cpu(rcu_awake_at_gp_end, cpu) = 0;
 	} else if (per_cpu(rcu_dyntick_drain, cpu) <= RCU_IDLE_OPT_FLUSHES &&
-		   !rcu_pending(cpu)) {
+		   !rcu_pending(cpu) &&
+		   !local_softirq_pending()) {
 		/* Can we go dyntick-idle despite still having callbacks? */
 		trace_rcu_prep_idle("Dyntick with callbacks");
 		per_cpu(rcu_dyntick_drain, cpu) = 0;
