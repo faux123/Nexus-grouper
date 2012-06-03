@@ -7,6 +7,7 @@
 
 #include <linux/compiler.h>
 #include <linux/types.h>
+#include <linux/rcu_types.h>
 
 #ifdef __KERNEL__
 #include <linux/atomic.h>
