@@ -233,9 +233,16 @@ static void rev_sku_to_speedo_ids(int rev, int sku)
 		case 0x83: /* T30L or T30S */
 			switch (package_id) {
 			case 1: /* MID => T30L */
+#ifdef CONFIG_TEGRA_CPU_OVERCLOCK
+			/* fake it to behave as AP33 variant */
+				cpu_speedo_id = 4;
+				soc_speedo_id = 1;
+				threshold_index = 7;
+#else
 				cpu_speedo_id = 7;
 				soc_speedo_id = 1;
 				threshold_index = 10;
+#endif
 				break;
 			case 2: /* DSC => T30S */
 				cpu_speedo_id = 3;
@@ -428,7 +435,11 @@ void tegra_init_speedo_data(void)
 			break;
 		}
 	}
+#if CONFIG_TEGRA_CPU_OVERCLOCK
+	cpu_process_id = 3; /* fake it to behave as AP33 cpu variant 3 */
+#else
 	cpu_process_id = iv -1;
+#endif
 
 	if (cpu_process_id == -1) {
 		pr_err("****************************************************");
@@ -448,7 +459,11 @@ void tegra_init_speedo_data(void)
 			break;
 		}
 	}
+#if CONFIG_TEGRA_CPU_OVERCLOCK
+	core_process_id = 1; /* fake it to behave as AP33 core variant 1 */
+#else
 	core_process_id = iv -1;
+#endif
 
 	if (core_process_id == -1) {
 		pr_err("****************************************************");
