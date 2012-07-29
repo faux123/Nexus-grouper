@@ -106,6 +106,7 @@ struct dvfs {
 };
 
 extern struct dvfs_rail *tegra_cpu_rail;
+extern struct dentry *clk_debugfs_root;
 
 #ifdef CONFIG_TEGRA_SILICON_PLATFORM
 void tegra_soc_init_dvfs(void);
