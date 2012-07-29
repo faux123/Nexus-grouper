@@ -960,7 +960,7 @@ static void clk_unlock_all(void)
 	__clk_unlock_all_mutexes();
 }
 
-static struct dentry *clk_debugfs_root;
+struct dentry *clk_debugfs_root;
 
 static void dvfs_show_one(struct seq_file *s, struct dvfs *d, int level)
 {
