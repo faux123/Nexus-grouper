@@ -380,6 +380,20 @@ extern int rcu_my_thread_group_empty(void);
 		}							\
 	} while (0)
 
+#if defined(CONFIG_PROVE_RCU) && !defined(CONFIG_PREEMPT_RCU)
+static inline void rcu_preempt_sleep_check(void)
+{
+	rcu_lockdep_assert(!lock_is_held(&rcu_lock_map),
+			   "Illegal context switch in RCU read-side "
+			   "critical section");
+}
+#else /* #ifdef CONFIG_PROVE_RCU */
+static inline void rcu_preempt_sleep_check(void)
+{
+}
+#endif /* #else #ifdef CONFIG_PROVE_RCU */
+
+		rcu_preempt_sleep_check();				\
 #else /* #ifdef CONFIG_PROVE_RCU */
 
 #define rcu_lockdep_assert(c) do { } while (0)
