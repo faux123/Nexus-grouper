@@ -2127,10 +2127,6 @@ static void rcu_cleanup_after_idle(int cpu)
  */
 static void rcu_prepare_for_idle(int cpu)
 {
-	unsigned long flags;
-
-	local_irq_save(flags);
-
 	/*
 	 * If there are no callbacks on this CPU or if RCU has no further
 	 * need for this CPU at the moment, enter dyntick-idle mode.
@@ -2140,7 +2136,6 @@ static void rcu_prepare_for_idle(int cpu)
 		per_cpu(rcu_dyntick_holdoff, cpu) = jiffies - 1;
 		per_cpu(rcu_dyntick_drain, cpu) = 0;
 		per_cpu(rcu_awake_at_gp_end, cpu) = 0;
-		local_irq_restore(flags);
 		trace_rcu_prep_idle("No callbacks");
 		return;
 	}
@@ -2158,7 +2153,6 @@ static void rcu_prepare_for_idle(int cpu)
 	 * refrained from disabling the scheduling-clock tick.
 	 */
 	if (per_cpu(rcu_dyntick_holdoff, cpu) == jiffies) {
-		local_irq_restore(flags);
 		trace_rcu_prep_idle("In holdoff");
 		return;
 	}
@@ -2184,7 +2178,6 @@ static void rcu_prepare_for_idle(int cpu)
 	} else if (--per_cpu(rcu_dyntick_drain, cpu) <= 0) {
 		/* We have hit the limit, so time to give up. */
 		per_cpu(rcu_dyntick_holdoff, cpu) = jiffies;
-		local_irq_restore(flags);
 		trace_rcu_prep_idle("Begin holdoff");
 		invoke_rcu_core();  /* Force the CPU out of dyntick-idle. */
 		return;
@@ -2196,23 +2189,17 @@ static void rcu_prepare_for_idle(int cpu)
 	 */
 #ifdef CONFIG_TREE_PREEMPT_RCU
 	if (per_cpu(rcu_preempt_data, cpu).nxtlist) {
-		local_irq_restore(flags);
 		rcu_preempt_qs(cpu);
 		force_quiescent_state(&rcu_preempt_state, 0);
-		local_irq_save(flags);
 	}
 #endif /* #ifdef CONFIG_TREE_PREEMPT_RCU */
 	if (per_cpu(rcu_sched_data, cpu).nxtlist) {
-		local_irq_restore(flags);
 		rcu_sched_qs(cpu);
 		force_quiescent_state(&rcu_sched_state, 0);
-		local_irq_save(flags);
 	}
 	if (per_cpu(rcu_bh_data, cpu).nxtlist) {
-		local_irq_restore(flags);
 		rcu_bh_qs(cpu);
 		force_quiescent_state(&rcu_bh_state, 0);
-		local_irq_save(flags);
 	}
 
 	/*
@@ -2220,13 +2207,10 @@ static void rcu_prepare_for_idle(int cpu)
 	 * So try forcing the callbacks through the grace period.
 	 */
 	if (rcu_cpu_has_callbacks(cpu)) {
-		local_irq_restore(flags);
 		trace_rcu_prep_idle("More callbacks");
 		invoke_rcu_core();
-	} else {
-		local_irq_restore(flags);
+	} else
 		trace_rcu_prep_idle("Callbacks drained");
-	}
 }
 
 /*
