@@ -65,8 +65,7 @@ struct jit_ctx {
 #endif
 };
 
-/* enable by default! faux123 */
-int bpf_jit_enable __read_mostly = 1;
+int bpf_jit_enable __read_mostly;
 
 static u8 jit_get_skb_b(struct sk_buff *skb, unsigned offset)
 {
