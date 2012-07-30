@@ -469,6 +469,7 @@ static void rcu_prepare_for_idle_init(int cpu);
 static void rcu_cleanup_after_idle(int cpu);
 static void rcu_prepare_for_idle(int cpu);
 static void rcu_wake_cpus_for_gp_end(void);
+static void rcu_idle_count_callbacks_posted(void);
 static void rcu_schedule_wake_gp_end(void);
 static void print_cpu_stall_info_begin(void);
 static void print_cpu_stall_info(struct rcu_state *rsp, int cpu);
