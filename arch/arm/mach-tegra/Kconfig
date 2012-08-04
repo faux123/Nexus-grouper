@@ -418,6 +418,13 @@ config TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
 	help
 	 Also will restore to original cpu frequency governor when device is resumed
 
+config TEGRA_GPU_OVERCLOCK
+	bool "Tegra3 GPU Overclocking"
+	depends on ARCH_TEGRA_3x_SOC
+	default n
+	help
+	  Tegra3 GPU overclocking
+
 config TEGRA_CPU_OVERCLOCK
 	bool "Tegra3 CPU Overclocking"
 	depends on ARCH_TEGRA_3x_SOC
