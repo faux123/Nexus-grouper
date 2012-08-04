@@ -4614,6 +4614,26 @@ static struct cpufreq_frequency_table freq_table_1p5GHz[] = {
 	{14, CPUFREQ_TABLE_END },
 };
 
+#ifdef CONFIG_TEGRA_CPU_OVERCLOCK_ULTIMATE
+static struct cpufreq_frequency_table freq_table_1p6GHz[] = {
+	{ 0,   51000 },
+	{ 1,  102000 },
+	{ 2,  204000 },
+	{ 3,  340000 },
+	{ 4,  475000 },
+	{ 5,  640000 },
+	{ 6,  760000 },
+	{ 7,  910000 },
+	{ 8, 1150000 },
+	{ 9, 1300000 },
+	{10, 1400000 },
+	{11, 1500000 },
+	{12, 1550000 },
+	{13, 1600000 },
+	{14, CPUFREQ_TABLE_END },
+};
+#endif
+
 static struct cpufreq_frequency_table freq_table_1p7GHz[] = {
 	{ 0,   51000 },
 	{ 1,  102000 },
@@ -4638,6 +4658,9 @@ static struct tegra_cpufreq_table_data cpufreq_tables[] = {
 	{ freq_table_1p3GHz, 2, 10 },
 	{ freq_table_1p4GHz, 2, 11 },
 	{ freq_table_1p5GHz, 2, 12 },
+#ifdef CONFIG_TEGRA_CPU_OVERCLOCK_ULTIMATE
+	{ freq_table_1p6GHz, 2, 12 },
+#endif
 	{ freq_table_1p7GHz, 2, 12 },
 };
 
