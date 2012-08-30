@@ -363,10 +363,10 @@ void __init tegra_init_cpu_edp_limits(unsigned int regulator_mA)
 	for (j = 0; j < edp_limits_size; j++) {
 		e[j].temperature = (int)t[i+j].temperature;
 #ifdef CONFIG_TEGRA_CPU_OVERCLOCK_ULTIMATE
-		e[j].freq_limits[0] = (unsigned int)(t[i+j].freq_limits[0]+5) * 10000;
-		e[j].freq_limits[1] = (unsigned int)(t[i+j].freq_limits[1]+15) * 10000;
-		e[j].freq_limits[2] = (unsigned int)(t[i+j].freq_limits[2]+15) * 10000;
-		e[j].freq_limits[3] = (unsigned int)(t[i+j].freq_limits[3]+15) * 10000;
+		e[j].freq_limits[0] = (unsigned int)(t[i+j].freq_limits[0]+10) * 10000;
+		e[j].freq_limits[1] = (unsigned int)(t[i+j].freq_limits[1]+20) * 10000;
+		e[j].freq_limits[2] = (unsigned int)(t[i+j].freq_limits[2]+20) * 10000;
+		e[j].freq_limits[3] = (unsigned int)(t[i+j].freq_limits[3]+20) * 10000;
 #else
 #ifdef CONFIG_TEGRA_GAMING_FIX
 		e[j].freq_limits[0] = (unsigned int)(t[i+j].freq_limits[0]-10) * 10000;
