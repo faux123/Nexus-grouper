@@ -438,6 +438,13 @@ config TEGRA_GPU_OVERCLOCK
 	help
 	  Tegra3 GPU overclocking
 
+config TEGRA_VARIANT_INFO
+	bool "Tegra3 variant info"
+	depends on ARCH_TEGRA_3x_SOC
+	default y
+	help
+	  Tegra3 SOC variant info display via debugfs
+
 config TEGRA_CPU_OVERCLOCK
 	bool "Tegra3 CPU Overclocking"
 	depends on ARCH_TEGRA_3x_SOC
