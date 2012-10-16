@@ -101,6 +101,7 @@
 #define APSD_DCP		0x02
 #define APSD_OTHER		0x03
 #define APSD_SDP		0x04
+#define APSD_SDP2		0x06
 #define USB_30		0x20
 
 /* Functions declaration */
@@ -671,54 +672,65 @@ static int cable_type_detect(void)
 	mutex_lock(&charger->cable_lock);
 
 	if (gpio_get_value(gpio)) {
-			printk("INOK=H\n");
-			success = battery_callback(non_cable);
+		pr_info("INOK=H\n");
+		success = battery_callback(non_cable);
 #ifdef TOUCH_CALLBACK_ENABLED
-                   touch_callback(non_cable);
+		touch_callback(non_cable);
 #endif
 
 	} else {
-			printk("INOK=L\n");
+		pr_info("INOK=L\n");
 
-			/* cable type dection */
-			retval = smb347_read(client, smb347_STS_REG_E);
-			SMB_NOTICE("Reg3F : 0x%02x\n", retval);
-			if(retval & USBIN) {	//USBIN
-					retval = smb347_read(client, smb347_STS_REG_D);
-					SMB_NOTICE("Reg3E : 0x%02x\n", retval);
-				if(retval & APSD_OK) {	//APSD completed
-						retval &= APSD_RESULT;
-					if(retval == APSD_CDP) {	//APSD resulted
-							printk("Cable: CDP\n");
-							success = battery_callback(ac_cable);
-#ifdef TOUCH_CALLBACK_ENABLED
-                                             touch_callback(ac_cable);
-#endif 
-					} else if(retval == APSD_DCP) {
-							printk("Cable: DCP\n");
-							success = battery_callback(ac_cable);
-#ifdef TOUCH_CALLBACK_ENABLED
-                                             touch_callback(ac_cable);
-#endif 
+		/* cable type dection */
+		retval = smb347_read(client, smb347_STS_REG_E);
+		SMB_NOTICE("Reg3F : 0x%02x\n", retval);
+		if(retval & USBIN) {	//USBIN
+			retval = smb347_read(client, smb347_STS_REG_D);
+			SMB_NOTICE("Reg3E : 0x%02x\n", retval);
+			if(retval & APSD_OK) {	//APSD completed
+				retval &= APSD_RESULT;
 
-					} else if(retval == APSD_OTHER) {
-							printk("Cable: OTHER\n");
-					} else if(retval == APSD_SDP) {
-							printk("Cable: SDP\n");
-							success = battery_callback(usb_cable);
+				switch (retval) {
+				case APSD_CDP:
+					pr_info("Cable: CDP\n");
+					success = battery_callback(ac_cable);
 #ifdef TOUCH_CALLBACK_ENABLED
-                                             touch_callback(usb_cable);
+					touch_callback(ac_cable);
+#endif
+					break;
+				case APSD_DCP:
+					pr_info("Cable: DCP\n");
+					success = battery_callback(ac_cable);
+#ifdef TOUCH_CALLBACK_ENABLED
+					touch_callback(ac_cable);
 #endif 
-
-					} else
-							printk("Unkown Plug In Cable type !\n");
-				}else
-					printk("APSD not completed\n");
-			}
-			else
-			{
-					printk("USBIN=0\n");
-			}
+					break;
+				case APSD_OTHER:
+					pr_info("Cable: OTHER\n");
+					break;
+				case APSD_SDP:
+					pr_info("Cable: SDP\n");
+					success = battery_callback(usb_cable);
+#ifdef TOUCH_CALLBACK_ENABLED
+					touch_callback(usb_cable);
+#endif 
+					break;
+				case APSD_SDP2:
+					pr_info("Cable: SDP2 host mode charging\n");
+					success = battery_callback(usb_cable);
+#ifdef TOUCH_CALLBACK_ENABLED
+					touch_callback(usb_cable);
+#endif
+					break;
+				default:
+					pr_warn("Unkown Plug In Cable type !! retval=%d\n", retval);
+					break;
+				}
+			}else
+				pr_warn("APSD not completed\n");
+		}
+		else
+			pr_info("USBIN=0\n");
 	}
 
 	mutex_unlock(&charger->cable_lock);
