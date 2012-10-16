@@ -414,6 +414,10 @@ int tegra_auto_hotplug_init(struct mutex *cpu_lock)
 	idle_top_freq = clk_get_max_rate(cpu_lp_clk) / 1000;
 	idle_bottom_freq = clk_get_min_rate(cpu_g_clk) / 1000;
 
+	//faux123 debug
+	pr_info("idle top LP cpufreq => %u\n", idle_top_freq);
+	pr_info("idle bottom G cpufreq => %u\n", idle_bottom_freq);
+
 	up_delay = msecs_to_jiffies(UP_DELAY_MS);
 	down_delay = msecs_to_jiffies(DOWN_DELAY_MS);
 	cpumask_clear(&cr_online_requests);

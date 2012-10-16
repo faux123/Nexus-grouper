@@ -228,7 +228,11 @@ static struct dvfs core_dvfs_table[] = {
 	/* Core voltages (mV):		    950,   1000,   1050,   1100,   1150,    1200,    1250,    1300,    1350 */
 	/* Clock limits for internal blocks, PLLs */
 	CORE_DVFS("cpu_lp", 0, 1, KHZ,        1, 294000, 342000, 427000, 475000,  500000,  500000,  500000,  500000),
+#if CONFIG_TEGRA3_LP_CORE_OVERDRIVE
+	CORE_DVFS("cpu_lp", 1, 1, KHZ,   204000, 295000, 370000, 428000, 475000,  513000,  579000,  620000,  620000),
+#else
 	CORE_DVFS("cpu_lp", 1, 1, KHZ,   204000, 294000, 342000, 427000, 475000,  500000,  500000,  500000,  500000),
+#endif
 	CORE_DVFS("cpu_lp", 2, 1, KHZ,   204000, 295000, 370000, 428000, 475000,  513000,  579000,  620000,  620000),
 	CORE_DVFS("cpu_lp", 3, 1, KHZ,        1,      1,      1,      1,      1,       1,  450000,  450000,  450000),
 
@@ -301,7 +305,11 @@ static struct dvfs core_dvfs_table[] = {
 	CORE_DVFS("cbus",   2, 1, KHZ,        1, 247000, 304000, 352000, 400000,  437000,  484000,  520000,  600000),
 	CORE_DVFS("cbus",   3, 1, KHZ,        1, 484000, 484000, 484000, 484000,  484000,  484000,  484000,  484000),
 
+#ifdef CONFIG_TEGRA3_LP_CORE_OVERDRIVE
+	CORE_DVFS("pll_c",  -1, 1, KHZ,  533000, 667000, 667000, 800000, 800000, 1066000, 1160000, 1260000, 1260000),
+#else
 	CORE_DVFS("pll_c",  -1, 1, KHZ,  533000, 667000, 667000, 800000, 800000, 1066000, 1066000, 1066000, 1200000),
+#endif
 
 	/*
 	 * PLLM dvfs is common across all speedo IDs with one special exception
@@ -646,11 +654,15 @@ static int __init get_core_nominal_mv_index(int speedo_id)
 	if (core_edp_limit)
 		mv = min(mv, core_edp_limit);
 
+	pr_info("core voltage => %i\n", mv);
+
 	/* Round nominal level down to the nearest core scaling step */
 	for (i = 0; i < MAX_DVFS_FREQS; i++) {
 		if ((core_millivolts[i] == 0) || (mv < core_millivolts[i]))
 			break;
 	}
+
+	pr_info("core_nominal_mv_index: %i\n", (i-1));
 
 	if (i == 0) {
 		pr_err("tegra3_dvfs: unable to adjust core dvfs table to"
@@ -665,7 +677,11 @@ void __init tegra_soc_init_dvfs(void)
 	int cpu_speedo_id = tegra_cpu_speedo_id();
 	int soc_speedo_id = tegra_soc_speedo_id();
 	int cpu_process_id = tegra_cpu_process_id();
+#ifdef CONFIG_TEGRA3_LP_CORE_OVERDRIVE
+	int core_process_id = 2;
+#else
 	int core_process_id = tegra_core_process_id();
+#endif
 
 	int i;
 	int core_nominal_mv_index;
