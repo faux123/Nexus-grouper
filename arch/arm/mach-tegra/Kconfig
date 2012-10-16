@@ -417,6 +417,14 @@ config TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
 	help
 	 Also will restore to original cpu frequency governor when device is resumed
 
+config TEGRA3_LP_CORE_OVERDRIVE
+	bool "T3 LP Core Overdrive"
+	depends on ARCH_TEGRA_3x_SOC
+	default n
+	help
+	  Tegra3 Low Power (LP) Core Overdrive which unlocks
+	  full potential of LP core capabilities
+
 config TEGRA_RUNNABLE_THREAD
 	bool "Tegra3 runnable thread hotplug"
 	depends on ARCH_TEGRA_3x_SOC
