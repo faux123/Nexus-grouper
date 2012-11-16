@@ -1089,7 +1089,9 @@ field ## _store(struct device *dev, struct device_attribute *attr,	\
 		const char *buf, size_t size)				\
 {									\
 	if (size >= sizeof(buffer)) return -EINVAL;			\
-	return strlcpy(buffer, buf, sizeof(buffer));			\
+	memcpy(buffer, buf, size); 					\
+	buffer[size] = '\0'; 						\
+	return size; 							\
 }									\
 static DEVICE_ATTR(field, S_IRUGO | S_IWUSR, field ## _show, field ## _store);
 
