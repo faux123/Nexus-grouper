@@ -188,7 +188,7 @@ static inline int __tps6591x_reads(struct i2c_client *client, int reg,
 			udelay(TPS6591X_RETRY_DELAY);
 			retry_time ++;
 			pr_info("%s : retry %d times\n", __func__, retry_time);
-	ret = i2c_smbus_read_i2c_block_data(client, reg, len, val);
+			ret = i2c_smbus_read_i2c_block_data(client, reg, len, val);
 		}
 		else
 		{
@@ -208,7 +208,6 @@ static inline int __tps6591x_write(struct i2c_client *client,
 				 int reg, uint8_t val)
 {
 	int ret, retry_time = 0;
-
 	ret = i2c_smbus_write_byte_data(client, reg, val);
 
 	while(ret < 0)
