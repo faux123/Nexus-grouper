@@ -45,7 +45,8 @@
 #define BATTERY_POLLING_RATE	(60)
 #define DELAY_FOR_CORRECT_CHARGER_STATUS	(5)
 #define TEMP_KELVIN_TO_CELCIUS		(2731)
-#define MAXIMAL_VALID_BATTERY_TEMP	(200)
+#define MAXIMAL_VALID_BATTERY_TEMP	(120)
+#define BATTERY_PROTECTED_VOLT	(2800)
 #define USB_NO_Cable	0
 #define USB_DETECT_CABLE	1
 #define USB_SHIFT	0
@@ -480,34 +481,23 @@ static int bq27541_get_psp(int reg_offset, enum power_supply_property psp,
 
 	bq27541_device->smbus_status = bq27541_smbus_read_data(reg_offset, 0, &rt_value);
 
-	if (bq27541_device->smbus_status < 0) {
-		dev_err(&bq27541_device->client->dev,
-			"%s: i2c read for %d failed\n", __func__, reg_offset);
+	if ((bq27541_device->smbus_status < 0) && (psp != POWER_SUPPLY_PROP_TEMP)) {
+		dev_err(&bq27541_device->client->dev, "%s: i2c read for %d failed\n", __func__, reg_offset);
+		return -EINVAL;
+	}
 
-		if(psp == POWER_SUPPLY_PROP_TEMP && (++bq27541_device->temp_err<=3) && (bq27541_device->old_temperature!=0xFF)){
-			val->intval = bq27541_device->old_temperature;
-			BAT_NOTICE("temperature read fail, err= %u use old temp=%u\n", bq27541_device->temp_err, val->intval);
-			return 0;
-		}
-		else
-			return -EINVAL;
-	}
 	if (psp == POWER_SUPPLY_PROP_VOLTAGE_NOW) {
-		val->intval = bq27541_device->bat_vol = rt_value;
-		val->intval *= 1000;
-		BAT_NOTICE("voltage_now= %u uV\n", val->intval);
-	}
-	if (psp == POWER_SUPPLY_PROP_CURRENT_NOW) {
-		val->intval = rt_value;
-		/* Returns a signed 16-bit value in mA */
-		if (val->intval & 0x8000) {
-			/* Negative */
-			val->intval = ~val->intval & 0x7fff;
-			val->intval++;
-			val->intval *= -1;
+		if (rt_value >= bq27541_data[REG_VOLTAGE].min_value &&
+			rt_value <= bq27541_data[REG_VOLTAGE].max_value) {
+			if (rt_value > BATTERY_PROTECTED_VOLT) {
+				val->intval = bq27541_device->bat_vol = rt_value*1000;
+			} else {
+				val->intval = bq27541_device->bat_vol;
+			}
+		} else {
+			val->intval = bq27541_device->bat_vol;
 		}
-		val->intval *= 1000;
-		BAT_NOTICE("current_now= %d uA\n", val->intval);
+		BAT_NOTICE("voltage_now= %u uV\n", val->intval);
 	}
 	if (psp == POWER_SUPPLY_PROP_STATUS) {
 		ret = bq27541_device->bat_status = rt_value;
@@ -531,18 +521,40 @@ static int bq27541_get_psp(int reg_offset, enum power_supply_property psp,
 
 	} else if (psp == POWER_SUPPLY_PROP_TEMP) {
 		ret = bq27541_device->bat_temp = rt_value;
-		ret -= TEMP_KELVIN_TO_CELCIUS;
 
-		if ((ret/10) >= MAXIMAL_VALID_BATTERY_TEMP && bq27541_device->temp_err == 0) {
-			ret=300;
-			BAT_NOTICE("[Warning] set temp=30 (0.1¢XC)");
-			WARN_ON(1);
+		if (bq27541_device->smbus_status >=0) {
+			if (rt_value >= bq27541_data[REG_TEMPERATURE].min_value &&
+				rt_value <= bq27541_data[REG_TEMPERATURE].max_value) {
+				ret = (int)(u16)(((rt_value/10) - 273)*10);
+				if (ret>=0 && ret<=1000) {
+					if(bq27541_device->temp_err)
+						bq27541_device->temp_err--;
+				} else {
+					bq27541_device->temp_err++;
+				}
+			} else {
+				bq27541_device->temp_err++;
+			}
+		} else {
 			bq27541_device->temp_err++;
 		}
-		else {
-			bq27541_device->temp_err = 0;
-		}
 
+		if (bq27541_device->temp_err) {
+			BAT_NOTICE("error: temperature ret=%d, old_temp=%d \n",
+				rt_value, bq27541_device->old_temperature);
+			if (bq27541_device->old_temperature != 0xFF) {
+				ret = bq27541_device->old_temperature;
+			} else {
+				bq27541_device->temp_err--;
+				return -EINVAL;
+			}
+
+			if (bq27541_device->temp_err > 2) {
+				BAT_NOTICE("error: temp_err > 2, shut down system \n");
+				WARN_ON(1);
+				ret = MAXIMAL_VALID_BATTERY_TEMP;
+			}
+		}
 		bq27541_device->old_temperature = val->intval = ret;
 		BAT_NOTICE("temperature= %u (0.1¢XC)\n", val->intval);
 	}
