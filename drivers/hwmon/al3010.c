@@ -465,6 +465,9 @@ static void al3010_late_resume(struct early_suspend *h)
 	}
 	printk("al3010_late_resume+\n");
 	//+++
+	//delay 5ms to avoid al3010_early_suspend and al3010_late_resume too close.
+	//if too close , it would cause al3010 chip power on fail
+	mdelay(5);
 	ret = al3010_chip_resume(data);
 	//---
 	printk("al3010_late_resume-\n");
