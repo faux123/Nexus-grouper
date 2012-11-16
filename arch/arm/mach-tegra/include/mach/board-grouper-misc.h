@@ -141,12 +141,6 @@ enum tilapia_pcba_revision {
 	TILAPIA_PCBA_ER1 = 7,
 };
 
-enum grouper_pmic_id {
-	GROUPER_PMIC_MAXIM = 0,
-	GROUPER_PMIC_TI = 1,
-	GROUPER_PMIC_NUM,
-};
-
 enum grouper_project_id {
 	GROUPER_PROJECT_INVALID = -1,
 	GROUPER_PROJECT_NAKASI = 0,

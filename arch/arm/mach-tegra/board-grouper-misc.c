@@ -78,15 +78,6 @@ unsigned int grouper_query_pcba_revision(void)
 }
 EXPORT_SYMBOL(grouper_query_pcba_revision);
 
-unsigned int grouper_query_pmic_id(void)
-{
-	unsigned int value = 0;
-	value = (grouper_pcbid & 0x8) >> 3;
-
-	return value;
-}
-EXPORT_SYMBOL(grouper_query_pmic_id);
-
 unsigned int grouper_query_audio_codec(void)
 {
 	unsigned int value = 0;
