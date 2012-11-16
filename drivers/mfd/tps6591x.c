@@ -208,6 +208,7 @@ static inline int __tps6591x_write(struct i2c_client *client,
 				 int reg, uint8_t val)
 {
 	int ret, retry_time = 0;
+
 	ret = i2c_smbus_write_byte_data(client, reg, val);
 
 	while(ret < 0)
