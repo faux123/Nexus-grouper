@@ -923,6 +923,15 @@ static int cable_type_detect(void)
 	}
 	charger->old_cable_type = charger->cur_cable_type;
 
+	if (charger->cur_cable_type == ac_cable &&
+		charger->old_cable_type != ac_cable &&
+		charger->test_1800mA_fail == 0) {
+		wake_lock(&charger_wakelock);
+		queue_delayed_work(smb347_wq, &charger->curr_limit_work,
+					DELAY_FOR_CURR_LIMIT_RECONF*HZ);
+	}
+	charger->old_cable_type = charger->cur_cable_type;
+
 	mutex_unlock(&charger->cable_lock);
 	return success;
 }
