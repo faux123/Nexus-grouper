@@ -418,6 +418,13 @@ config TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
 	help
 	 Also will restore to original cpu frequency governor when device is resumed
 
+config TEGRA_LP1_950
+	bool "LP1 low core voltage"
+	default n
+	depends on ARCH_TEGRA_3x_SOC
+	help
+	  Enable support for LP1 Core voltage to set to lowest
+
 config TEGRA3_LP_CORE_OVERDRIVE
 	bool "T3 LP Core Overdrive"
 	depends on ARCH_TEGRA_3x_SOC
