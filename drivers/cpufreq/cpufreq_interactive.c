@@ -36,8 +36,6 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
 
-static atomic_t active_count = ATOMIC_INIT(0);
-
 struct cpufreq_interactive_cpuinfo {
 	struct timer_list cpu_timer;
 	int timer_idlecancel;
@@ -68,7 +66,9 @@ static spinlock_t up_cpumask_lock;
 static cpumask_t down_cpumask;
 static spinlock_t down_cpumask_lock;
 static struct mutex set_speed_lock;
+static struct mutex gov_state_lock;
 static struct kobject *interactive_kobj;
+static unsigned int active_count;
 
 struct cpufreq_interactive_core_lock {
 	struct pm_qos_request_list qos_min_req;
@@ -1221,21 +1221,25 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		if (!hispeed_freq)
 			hispeed_freq = policy->max;
 
+		mutex_lock(&gov_state_lock);
+		active_count++;
 		/*
 		 * Do not register the idle hook and create sysfs
 		 * entries if we have already done so.
 		 */
-		if (atomic_inc_return(&active_count) > 1)
-			return 0;
-
-		rc = sysfs_create_group(cpufreq_global_kobject,
-				&interactive_attr_group);
-		interactive_kobj = kobject_create_and_add(
-					"gov_interactive",
-					cpufreq_global_kobject);
-		kobject_uevent(interactive_kobj, KOBJ_ADD);
-		if (rc)
-			return rc;
+		if (active_count == 1) {
+			rc = sysfs_create_group(cpufreq_global_kobject,
+					&interactive_attr_group);
+			interactive_kobj = kobject_create_and_add(
+						"gov_interactive",
+						cpufreq_global_kobject);
+			kobject_uevent(interactive_kobj, KOBJ_ADD);
+			if (rc) {
+				mutex_unlock(&gov_state_lock);
+				return rc;
+			}
+		}
+		mutex_unlock(&gov_state_lock);
 
 		rc = input_register_handler(&cpufreq_interactive_input_handler);
 		if (rc)
@@ -1261,15 +1265,19 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		}
 
 		flush_work(&freq_scale_down_work);
-		if (atomic_dec_return(&active_count) > 0)
-			return 0;
+		mutex_lock(&gov_state_lock);
+
+		active_count--;
+
+		if (active_count == 0) {
+			sysfs_remove_group(cpufreq_global_kobject,
+					&interactive_attr_group);
+			kobject_uevent(interactive_kobj, KOBJ_REMOVE);
+			kobject_put(interactive_kobj);
+		}
 
 		input_unregister_handler(&cpufreq_interactive_input_handler);
-		sysfs_remove_group(cpufreq_global_kobject,
-				&interactive_attr_group);
-		kobject_uevent(interactive_kobj, KOBJ_REMOVE);
-		kobject_put(interactive_kobj);
-
+		mutex_unlock(&gov_state_lock);
 		break;
 
 	case CPUFREQ_GOV_LIMITS:
@@ -1346,6 +1354,7 @@ static int __init cpufreq_interactive_init(void)
 	spin_lock_init(&up_cpumask_lock);
 	spin_lock_init(&down_cpumask_lock);
 	mutex_init(&set_speed_lock);
+	mutex_init(&gov_state_lock);
 
 	pm_qos_add_request(&core_lock.qos_min_req, PM_QOS_MIN_ONLINE_CPUS,
 			PM_QOS_MIN_ONLINE_CPUS_DEFAULT_VALUE);
