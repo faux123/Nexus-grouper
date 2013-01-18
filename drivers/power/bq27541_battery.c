@@ -637,7 +637,7 @@ static int bq27541_get_psp(int reg_offset, enum power_supply_property psp,
 			}
 		}
 		bq27541_device->old_temperature = val->intval = ret;
-		BAT_NOTICE("temperature= %u (0.1¢XC)\n", val->intval);
+		BAT_NOTICE("temperature= %u (0.1¿XC)\n", val->intval);
 	}
 	if (psp == POWER_SUPPLY_PROP_CURRENT_NOW) {
 		val->intval = bq27541_device->bat_current
