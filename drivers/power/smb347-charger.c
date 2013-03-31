@@ -1,3 +1,4 @@
+
 /*
  * drivers/power/smb347-charger.c
  *
@@ -103,6 +104,7 @@
 #define APSD_DCP		0x02
 #define APSD_OTHER		0x03
 #define APSD_SDP		0x04
+#define APSD_SDP2		0x06
 #define USB_30		0x20
 #define DCIN_OV_UV_STS		0x50
 #define DELAY_FOR_CURR_LIMIT_RECONF (60)
@@ -887,7 +889,7 @@ static int cable_type_detect(void)
 	}
 
 	if (gpio_get_value(ac_ok)) {
-		printk(KERN_INFO "INOK=H\n");
+		pr_info("INOK=H\n");
 		charger->cur_cable_type = non_cable;
 		smb347_set_InputCurrentlimit(client, 900);
 		success = battery_callback(non_cable);
@@ -896,7 +898,7 @@ static int cable_type_detect(void)
 #endif
 		wake_unlock(&charger_wakelock);
 	} else {
-		printk(KERN_INFO "INOK=L\n");
+		pr_info("INOK=L\n");
 		retval = smb347_read(client, smb347_INTR_STS_E);
 		SMB_NOTICE("Reg39 : 0x%02x\n", retval);
 		if (!(retval & DCIN_OV_UV_STS) && !gpio_get_value(dock_in)) {
@@ -907,58 +909,82 @@ static int cable_type_detect(void)
 			/* cable type dection */
 			retval = smb347_read(client, smb347_STS_REG_E);
 			SMB_NOTICE("Reg3F : 0x%02x\n", retval);
-			if (retval & USBIN) {
-				SMB_NOTICE("USB_IN\n");
+			if(retval & USBIN) {	//USBIN
 				retval = smb347_read(client, smb347_STS_REG_D);
 				SMB_NOTICE("Reg3E : 0x%02x\n", retval);
-				if (retval & APSD_OK) {
-						retval &= APSD_RESULT;
-					if (retval == APSD_CDP) {
-						printk(KERN_INFO "Cable: CDP\n");
+				if(retval & APSD_OK) {	//APSD completed
+					retval &= APSD_RESULT;
+
+					switch (retval) {
+					case APSD_CDP:
+						pr_info("Cable: CDP\n");
+						success = battery_callback(ac_cable);
+						charger->cur_cable_type = ac_cable;
+#ifdef TOUCH_CALLBACK_ENABLED
+						touch_callback(ac_cable);
+#endif
+						break;
+					case APSD_DCP:
+						pr_info("Cable: DCP\n");
+						success = battery_callback(ac_cable);
+						charger->cur_cable_type = ac_cable;
+#ifdef TOUCH_CALLBACK_ENABLED
+					touch_callback(ac_cable);
+#endif 
+						break;
+					case APSD_OTHER:
+						pr_info("Cable: OTHER\n");
 						charger->cur_cable_type = ac_cable;
 						success = battery_callback(ac_cable);
 #ifdef TOUCH_CALLBACK_ENABLED
-	                                    touch_callback(ac_cable);
+						touch_callback(ac_cable);
 #endif
-					} else if (retval == APSD_DCP) {
-						printk(KERN_INFO "Cable: DCP\n");
-						charger->cur_cable_type = ac_cable;
-						success = battery_callback(ac_cable);
-#ifdef TOUCH_CALLBACK_ENABLED
-	                                    touch_callback(ac_cable);
-#endif
-					} else if (retval == APSD_OTHER) {
-						charger->cur_cable_type = ac_cable;
-						success = battery_callback(ac_cable);
-#ifdef TOUCH_CALLBACK_ENABLED
-	                                   touch_callback(ac_cable);
-#endif
-						printk(KERN_INFO "Cable: OTHER\n");
-					} else if (retval == APSD_SDP) {
-						printk(KERN_INFO "Cable: SDP\n");
+						break;
+					case APSD_SDP:
+						pr_info("Cable: SDP\n");
 						charger->cur_cable_type = usb_cable;
 						success = battery_callback(usb_cable);
 #ifdef TOUCH_CALLBACK_ENABLED
-	                                    touch_callback(usb_cable);
+						touch_callback(usb_cable);
+#endif 
+						break;
+					case APSD_SDP2:
+						pr_info("Cable: SDP2 host mode charging\n");
+						charger->cur_cable_type = usb_cable;
+						success = battery_callback(usb_cable);
+#ifdef TOUCH_CALLBACK_ENABLED
+						touch_callback(usb_cable);
 #endif
-					} else {
+						break;
+					default:
 						charger->cur_cable_type = unknow_cable;
-						printk(KERN_INFO "Unkown Plug In Cable type !\n");
+						pr_warn("Unkown Plug In Cable type !! retval=%d\n", retval);
 						if (gpio_get_value(dock_in)) {
 							charger->cur_cable_type = usb_cable;
 							success = battery_callback(usb_cable);
 						}
-					}
+						break;
+					} //switch
+
 				} else {
+					pr_warn("APSD not completed\n");
 					charger->cur_cable_type = unknow_cable;
-					printk(KERN_INFO "APSD not completed\n");
-				}
+				} //if
 			} else {
+				pr_info("USBIN=0\n");
 				charger->cur_cable_type = unknow_cable;
-				printk(KERN_INFO "USBIN=0\n");
-			}
-		}
+			} //if
+		} //if
+	} //if
+
+	if (charger->cur_cable_type == ac_cable &&
+		charger->old_cable_type != ac_cable &&
+		charger->test_1800mA_fail == 0) {
+		wake_lock(&charger_wakelock);
+		queue_delayed_work(smb347_wq, &charger->curr_limit_work,
+					DELAY_FOR_CURR_LIMIT_RECONF*HZ);
 	}
+	charger->old_cable_type = charger->cur_cable_type;
 
 	if (charger->cur_cable_type == ac_cable &&
 		charger->old_cable_type != ac_cable &&
@@ -1016,7 +1042,7 @@ static void dockin_isr_work_function(struct work_struct *dat)
 static ssize_t smb347_reg_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	struct i2c_client *client = charger->client;
-	uint8_t config_reg[14], cmd_reg[1], status_reg[10];
+	uint8_t config_reg[14], cmd_reg[2], status_reg[11];
 	int i, ret = 0;
 
 	ret += i2c_smbus_read_i2c_block_data(client, smb347_CHARGE, 15, config_reg)
@@ -1143,7 +1169,8 @@ static int __devinit smb347_probe(struct i2c_client *client,
 
 	queue_delayed_work(smb347_wq, &charger->cable_det_work, 0.5*HZ);
 
-	ret = register_otg_callback(smb347_otg_status, charger);
+	ret = register_otg_callback( (callback_t)smb347_otg_status, charger);
+
 	if (ret < 0)
 		goto error;
 
@@ -1161,7 +1188,7 @@ static int __devexit smb347_remove(struct i2c_client *client)
 	return 0;
 }
 
-static int smb347_suspend(struct i2c_client *client)
+static int smb347_suspend(struct i2c_client *client, pm_message_t mesg)
 {
 	charger->suspend_ongoing = 1;
 
@@ -1182,7 +1209,7 @@ static int smb347_resume(struct i2c_client *client)
 }
 
 
-static int smb347_shutdown(struct i2c_client *client)
+static void smb347_shutdown(struct i2c_client *client)
 {
 	int ret;
 	printk("smb347_shutdown+\n");
@@ -1200,7 +1227,7 @@ static int smb347_shutdown(struct i2c_client *client)
 			"otg..\n", __func__);
 
 	printk("smb347_shutdown-\n");
-	return 0;
+	return;
 }
 
 static const struct i2c_device_id smb347_id[] = {
