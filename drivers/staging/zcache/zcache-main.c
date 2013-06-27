@@ -1867,8 +1867,8 @@ static void zcache_frontswap_init(unsigned ignored)
 static struct frontswap_ops zcache_frontswap_ops = {
 	.put_page = zcache_frontswap_put_page,
 	.get_page = zcache_frontswap_get_page,
-	.invalidate_page = zcache_frontswap_flush_page,
-	.invalidate_area = zcache_frontswap_flush_area,
+	.flush_page = zcache_frontswap_flush_page,
+	.flush_area = zcache_frontswap_flush_area,
 	.init = zcache_frontswap_init
 };
 
