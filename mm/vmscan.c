@@ -1573,7 +1573,6 @@ zone_id_shrink_pagelist(struct zone *zone, struct list_head *page_list)
 		.nr_to_reclaim = SWAP_CLUSTER_MAX,
 		.may_unmap = 1,
 		.may_swap = 1,
-		.swappiness = vm_swappiness,
 		.order = 0,
 		.mem_cgroup = NULL,
 		.nodemask = NULL,
