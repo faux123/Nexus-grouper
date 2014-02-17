@@ -369,6 +369,12 @@ config TEGRA_CLUSTER_CONTROL
 	depends on ARCH_TEGRA_HAS_DUAL_CPU_CLUSTERS
 	default y if PM_SLEEP
 
+config INTELLI_PLUG
+        bool "Enable intelli-plug cpu hotplug driver"
+        default n
+        help
+          Generic Intelli-plug cpu hotplug driver for ARM SOCs
+
 config TEGRA_AUTO_HOTPLUG
 	bool "Enable automatic CPU hot-plugging"
 	depends on HOTPLUG_CPU && CPU_FREQ && !ARCH_CPU_PROBE_RELEASE && !ARCH_TEGRA_2x_SOC
@@ -569,3 +575,11 @@ config TEGRA_PREINIT_CLOCKS
 	  Preinitialize Tegra clocks to known states before actual full-
 	  scale clock initialization starts.
 endif
+
+config RQ_STATS
+	bool "Enable Run queue statistics"
+	default n
+	help
+	  Select this to enable scheduler rune queue statistic
+	  collections
+
