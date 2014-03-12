@@ -26,5 +26,5 @@ obj-$(CONFIG_CGROUP_DEVICE)		+= device_cgroup.o
 obj-$(CONFIG_TRUSTED_FOUNDATIONS)	+= tf_driver/built-in.o
 
 # Object integrity file lists
-subdir-$(CONFIG_IMA)			+= integrity/ima
-obj-$(CONFIG_IMA)			+= integrity/ima/built-in.o
+subdir-$(CONFIG_INTEGRITY)		+= integrity
+obj-$(CONFIG_INTEGRITY)			+= integrity/built-in.o
