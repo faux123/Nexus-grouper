@@ -113,21 +113,15 @@ static inline void set_cold_files(struct f2fs_sb_info *sbi, struct inode *inode,
 	}
 }
 
-static int f2fs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
+static int f2fs_create(struct inode *dir, struct dentry *dentry, int mode,
 						struct nameidata *nd)
 {
+	struct super_block *sb = dir->i_sb;
+	struct f2fs_sb_info *sbi = F2FS_SB(sb);
 	struct inode *inode;
-	struct super_block *sb;
-	struct f2fs_sb_info *sbi;
 
 	nid_t ino = 0;
 	int err;
-
-	if (inode->i_nlink >= F2FS_LINK_MAX)
-		return -EMLINK;
-
-	sb = dir->i_sb;
-	sbi = F2FS_SB(sb);
 
 	f2fs_balance_fs(sbi);
 
@@ -167,9 +161,16 @@ static int f2fs_link(struct dentry *old_dentry, struct inode *dir,
 		struct dentry *dentry)
 {
 	struct inode *inode = old_dentry->d_inode;
-	struct super_block *sb = dir->i_sb;
-	struct f2fs_sb_info *sbi = F2FS_SB(sb);
+	struct super_block *sb;
+	struct f2fs_sb_info *sbi;
+
 	int err;
+
+	if (inode->i_nlink >= F2FS_LINK_MAX)
+		return -EMLINK;
+
+	sb = dir->i_sb;
+	sbi = F2FS_SB(sb);
 
 	f2fs_balance_fs(sbi);
 
@@ -297,7 +298,7 @@ out:
 	return err;
 }
 
-static int f2fs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+static int f2fs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
 {
 	struct f2fs_sb_info *sbi;
 	struct inode *inode;
@@ -351,7 +352,7 @@ static int f2fs_rmdir(struct inode *dir, struct dentry *dentry)
 }
 
 static int f2fs_mknod(struct inode *dir, struct dentry *dentry,
-				umode_t mode, dev_t rdev)
+				int mode, dev_t rdev)
 {
 	struct super_block *sb = dir->i_sb;
 	struct f2fs_sb_info *sbi = F2FS_SB(sb);
