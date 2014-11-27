@@ -224,7 +224,7 @@ static struct dvfs core_dvfs_table[] = {
 	/* Core voltages (mV):		    950,   1000,   1050,   1100,   1150,    1200,    1250,    1300,    1350 */
 	/* Clock limits for internal blocks, PLLs */
 	CORE_DVFS("cpu_lp", 0, 1, KHZ,        1, 294000, 342000, 427000, 475000,  500000,  500000,  500000,  500000),
-#if CONFIG_TEGRA3_LP_CORE_OVERDRIVE
+#ifdef CONFIG_TEGRA3_LP_CORE_OVERDRIVE
 	CORE_DVFS("cpu_lp", 1, 1, KHZ,   204000, 295000, 370000, 428000, 475000,  513000,  579000,  620000,  620000),
 #else
 	CORE_DVFS("cpu_lp", 1, 1, KHZ,   204000, 294000, 342000, 427000, 475000,  500000,  500000,  500000,  500000),
