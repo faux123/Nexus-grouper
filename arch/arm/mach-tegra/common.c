@@ -103,7 +103,12 @@ static struct board_info pmu_board_info;
 static struct board_info display_board_info;
 static struct board_info camera_board_info;
 
+#ifdef CONFIG_TEGRA3_LP_CORE_OVERDRIVE
+static int pmu_core_edp = 1300;	/* LP overdrive 1.3V EDP limit */
+#else
 static int pmu_core_edp = 1200;	/* default 1.2V EDP limit */
+#endif
+
 static int board_panel_type;
 static enum power_supply_type pow_supply_type = POWER_SUPPLY_TYPE_MAINS;
 
